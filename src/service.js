@@ -305,19 +305,34 @@ function prepareBucketZip(req, res, next) {
             prepareOutput();
             next();
         } else {
+            if (!info.files || !info.files.length) {
+                // no files uploaded yet
+                req.output = null;
+                return next();
+            }
+
             var zip = archiver('zip');
             var output = fs.createWriteStream(zipPath);
+            var sha1 = crypto.createHash('sha1');
 
             zip.on('error', function(err) {
                 error('Error creating zip file: ' + err.message);
                 next(new Error('Error creating zip file'));
             });
 
+            output.on('data', function(data) {
+                sha1.update(data);
+            });
+
             output.on('close', function() {
                 // this runs last
                 log('Generated bucket.zip for ' + info.id);
-                prepareOutput();
-                next();
+                fs.stat(zipPath, function(err, stats) {
+                    info.size = stats.size;
+                    info.sha1 = sha1.digest('hex');
+                    prepareOutput();
+                    next();
+                });
             });
 
             zip.pipe(output);
@@ -384,6 +399,13 @@ function returnBucketInfoList(req, res) {
 
 function returnFileContent(req, res) {
     var output = req.output;
+    if (!output) {
+        return res.status(404).json({
+            code: 'ERROR',
+            message: 'Empty bucket'
+        });
+    }
+
     output.fileScope.downloads = (output.fileScope.downloads || 0) + 1;
     if (output.fileName) {
         res.setHeader('Content-disposition', 'attachment; filename=' + output.fileName);
@@ -406,7 +428,7 @@ function returnBucketInfo(req, res) {
 app.all('*', noCache);
 
 // create new bucket
-app.post('/', authorise, createBucket, handleFileUpload, handleMetadataPost, returnBucketInfo);
+app.post('/', authorise, createBucket, handleFileUpload, handleMetadataPost, prepareBucketZip, returnBucketInfo);
 
 // return all buckets info
 app.get('/', authorise, listAllBuckets, returnBucketInfoList);
@@ -415,7 +437,7 @@ app.get('/', authorise, listAllBuckets, returnBucketInfoList);
 app.get('/info', listSelectedBuckets, returnBucketInfoList);
 
 // update existing bucket
-app.post('/:id', findExistingBucket, handleFileUpload, handleMetadataPost, removeBucketZip, returnBucketInfo);
+app.post('/:id', findExistingBucket, handleFileUpload, handleMetadataPost, removeBucketZip, prepareBucketZip, returnBucketInfo);
 
 // return zipped bucket contents
 app.get('/:id', findExistingBucket, prepareBucketZip, returnFileContent);
@@ -430,7 +452,7 @@ app.get('/:id/info', findExistingBucket, returnBucketInfo);
 app.get('/:id/files/:idx_or_name/:stream?', findExistingBucket, findFileInBucket, returnFileContent);
 
 // delete file from the bucket
-app.delete('/:id/files/:idx_or_name', findExistingBucket, findFileInBucket, removeFileFromBucket, removeBucketZip, returnBucketInfo);
+app.delete('/:id/files/:idx_or_name', findExistingBucket, findFileInBucket, removeFileFromBucket, removeBucketZip, prepareBucketZip, returnBucketInfo);
 
 // set metadata
 app.post('/:id/metadata', findExistingBucket, bodyParser.json(), handleMetadataPost, returnBucketInfo);
