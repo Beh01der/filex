@@ -320,7 +320,7 @@ function prepareBucketZip(req, res, next) {
                 next(new Error('Error creating zip file'));
             });
 
-            output.on('data', function(data) {
+            zip.on('data', function(data) {
                 sha1.update(data);
             });
 
