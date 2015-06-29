@@ -472,6 +472,7 @@ app.use(function(error, req, res, next) {
     }
 });
 
-app.listen(3000, function () {
-    log('Listening on port 3000');
+var servicePort = process.env.SERVICE_PORT || 3000;
+app.listen(servicePort, function () {
+    log('Listening on port ' + servicePort);
 });
