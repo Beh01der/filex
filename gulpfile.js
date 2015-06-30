@@ -11,7 +11,7 @@ gulp.task('clean', function(cb) {
 });
 
 gulp.task('copy', function() {
-    return gulp.src(['./src', 'package.json'])
+    return gulp.src(['./src/*.js', 'package.json'])
         .pipe(gulp.dest('build/deploy'));
 });
 
