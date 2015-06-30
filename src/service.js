@@ -43,6 +43,7 @@
  */
 
 var fs = require('fs');
+var fse = require('fs-extra');
 var crypto = require('crypto');
 var express = require('express');
 var multer = require('multer');
@@ -56,6 +57,14 @@ var rimraf = require('rimraf');
 var archiver = require('archiver');
 var moment = require('moment');
 var app = express();
+
+var pack = fse.readJsonSync('package.json');
+var commander = require('commander');
+commander
+    .version(pack.version)
+    .option('-t, --token <value>', 'secure token')
+    .option('-p, --port <n>', 'service port', 3000, parseInt)
+    .parse(process.argv);
 
 var fileDir = './upload';
 var fileSizeLimit = 20;     // 20 Mb
@@ -73,17 +82,10 @@ function error(message) {
 rimraf.sync(fileDir);
 fs.mkdirSync(fileDir);
 
-if (process.argv.length < 3 || (process.argv[2].length < 32 && process.argv[2] !== '--disable-security')) {
-    error('Usage: node src/service.js [secure-token-at-least-32-chars]|--disable-security');
-    process.exit(1);
-}
-
-var secureToken = process.argv[2];
-if (secureToken === '--disable-security') {
-    secureToken = undefined;
-    log('Warning!!! Security is disabled for this service! It allows public access to all service funcitonality!');
-    log('To enable security, pass secure token as a parameter (must be at least 32 char long).');
-    log('Example: node src/service.js D9LEwTq1hkZOQhEdiH3LGLZ1vELO283H');
+if (!commander.token) {
+    console.log('Warning!!! Security is disabled for this service! It allows public access to all service functionality!');
+    console.log('To enable security, pass secure token as a parameter (must be at least 32 char long).');
+    console.log('Example: node src/service.js -t D9LEwTq1hkZOQhEdiH3LGLZ1vELO283H');
 }
 
 function getDir(info) {
@@ -133,9 +135,9 @@ function noCache(req, res, next) {
 
 function authorise(req, res, next) {
     // authorisation check
-    if (secureToken) {
+    if (commander.token) {
         var token = req.header('X-Auth-Token') || req.query.token;
-        if (secureToken !== token) {
+        if (commander.token !== token) {
             // authentication failed
             return res.status(401).json({
                 code: 'ERROR',
@@ -472,7 +474,6 @@ app.use(function(error, req, res, next) {
     }
 });
 
-var servicePort = process.env.SERVICE_PORT || 3000;
-app.listen(servicePort, function () {
-    log('Listening on port ' + servicePort);
+app.listen(commander.port, function () {
+    console.log('filex ' + pack.version + ' listening on port ' + commander.port);
 });

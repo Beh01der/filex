@@ -1,6 +1,6 @@
 var request = require('request-json');
 
-var baseUrl = 'http://localhost:3000';
+var baseUrl = 'http://localhost:3001';
 var apiAccessToken = 'ZmM2NzMzMWZiMTkxYjhhNmRkMjQzMzBlMzM0ZWE3NzM5NzU1NmRlYjc4YzM5OGRmYjQ5Yzk';//'put your token here';
 
 function createEmptyBucket(metadata /* optional */) {
@@ -20,7 +20,7 @@ function createBucketWithFiles(files, metadata /* optional */) {
     var client = request.createClient(baseUrl);
     client.headers['X-Auth-Token'] = apiAccessToken;
 
-    client.sendFile('/', files, metadata, function(err, res, body) {
+    client.sendFile('/?ttl=100000', files, metadata, function(err, res, body) {
         if (err) {
             console.error(err);
         } else {
@@ -64,3 +64,6 @@ function downloadBucketContents(bucketId, saveToFile) {
         }
     });
 }
+
+createBucketWithFiles('/Users/andrey/Tmp/deployment-15-0528-0928.zip');
+createBucketWithFiles('/Users/andrey/Tmp/deployment-15-0623-1905.zip');
