@@ -364,7 +364,7 @@ function removeBucketZip(req, res, next) {
 function removeBucket(req, res, next) {
     var info = req.bucketInfo;
 
-    rimraf(getDir(info));
+    rimraf(getDir(info), Function.noop);
     buckets.delete(info.id);
 
     next();
