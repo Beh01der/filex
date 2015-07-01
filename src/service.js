@@ -458,16 +458,13 @@ app.get('/:id/files/:idx_or_name/:stream?', findExistingBucket, findFileInBucket
 // delete file from the bucket
 app.delete('/:id/files/:idx_or_name', findExistingBucket, findFileInBucket, removeFileFromBucket, removeBucketZip, prepareBucketZip, returnBucketInfo);
 
-// set metadata
-app.post('/:id/metadata', findExistingBucket, jsonBodyParser, handleMetadataPost, returnBucketInfo);
-
 // patch metadata
 app.patch('/:id/metadata', findExistingBucket, jsonBodyParser, handleMetadataPatch, returnBucketInfo);
 
 // handle all unexpected errors
-app.use(function(error, req, res, next) {
-    if (error) {
-        error('Internal server error: ' + error.message);
+app.use(function(err, req, res, next) {
+    if (err) {
+        error('Internal server error: ' + err.message);
 
         res.status(400).json({
             code: 'ERROR',
