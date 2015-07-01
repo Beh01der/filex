@@ -426,11 +426,13 @@ function returnBucketInfo(req, res) {
     res.json(info);
 }
 
+var jsonBodyParser = bodyParser.json();
+
 // ENDPOINTS
 app.all('*', noCache);
 
 // create new bucket
-app.post('/', authorise, createBucket, handleFileUpload, handleMetadataPost, prepareBucketZip, returnBucketInfo);
+app.post('/', authorise, createBucket, handleFileUpload, jsonBodyParser, handleMetadataPost, prepareBucketZip, returnBucketInfo);
 
 // return all buckets info
 app.get('/', authorise, listAllBuckets, returnBucketInfoList);
@@ -439,7 +441,7 @@ app.get('/', authorise, listAllBuckets, returnBucketInfoList);
 app.get('/info', listSelectedBuckets, returnBucketInfoList);
 
 // update existing bucket
-app.post('/:id', findExistingBucket, handleFileUpload, handleMetadataPost, removeBucketZip, prepareBucketZip, returnBucketInfo);
+app.post('/:id', findExistingBucket, handleFileUpload, jsonBodyParser, handleMetadataPost, removeBucketZip, prepareBucketZip, returnBucketInfo);
 
 // return zipped bucket contents
 app.get('/:id', findExistingBucket, prepareBucketZip, returnFileContent);
@@ -457,10 +459,10 @@ app.get('/:id/files/:idx_or_name/:stream?', findExistingBucket, findFileInBucket
 app.delete('/:id/files/:idx_or_name', findExistingBucket, findFileInBucket, removeFileFromBucket, removeBucketZip, prepareBucketZip, returnBucketInfo);
 
 // set metadata
-app.post('/:id/metadata', findExistingBucket, bodyParser.json(), handleMetadataPost, returnBucketInfo);
+app.post('/:id/metadata', findExistingBucket, jsonBodyParser, handleMetadataPost, returnBucketInfo);
 
 // patch metadata
-app.patch('/:id/metadata', findExistingBucket, bodyParser.json(), handleMetadataPatch, returnBucketInfo);
+app.patch('/:id/metadata', findExistingBucket, jsonBodyParser, handleMetadataPatch, returnBucketInfo);
 
 // handle all unexpected errors
 app.use(function(error, req, res, next) {
