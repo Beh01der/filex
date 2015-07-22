@@ -13,8 +13,6 @@
  *  post    /:id            - upload one or more files to the bucket. If file with this name exists in the bucket, it will be replaced.
  *  post    /:id/metadata   - set metadata on bucket
  *
- *  patch   /:id/metadata   - update one or more fields of metadata
- *
  *  delete  /:id                    - delete bucket
  *  delete  /:id/files/:idx|:name   - delete file
  *
@@ -275,14 +273,16 @@ function handleFileUpload(req, res, next) {
 }
 
 function handleMetadataPost(req, res, next) {
-    if (req.body) {
-        req.bucketInfo.metadata = req.body;
-    }
+    req.bucketInfo.metadata = req.body || {};
     next();
 }
 
 function handleMetadataPatch(req, res, next) {
     if (req.body) {
+        if (!req.bucketInfo.metadata) {
+            req.bucketInfo.metadata = {};
+        }
+
         Object.addEach(req.bucketInfo.metadata, req.body);
     }
     next();
@@ -432,7 +432,7 @@ var jsonBodyParser = bodyParser.json();
 app.all('*', noCache);
 
 // create new bucket
-app.post('/', authorise, createBucket, handleFileUpload, jsonBodyParser, handleMetadataPost, prepareBucketZip, returnBucketInfo);
+app.post('/', authorise, createBucket, handleFileUpload, jsonBodyParser, handleMetadataPatch, prepareBucketZip, returnBucketInfo);
 
 // return all buckets info
 app.get('/', authorise, listAllBuckets, returnBucketInfoList);
@@ -441,7 +441,7 @@ app.get('/', authorise, listAllBuckets, returnBucketInfoList);
 app.get('/info', listSelectedBuckets, returnBucketInfoList);
 
 // update existing bucket
-app.post('/:id', findExistingBucket, handleFileUpload, jsonBodyParser, handleMetadataPost, removeBucketZip, prepareBucketZip, returnBucketInfo);
+app.post('/:id', findExistingBucket, handleFileUpload, jsonBodyParser, handleMetadataPatch, removeBucketZip, prepareBucketZip, returnBucketInfo);
 
 // return zipped bucket contents
 app.get('/:id', findExistingBucket, prepareBucketZip, returnFileContent);
@@ -459,7 +459,7 @@ app.get('/:id/files/:idx_or_name/:stream?', findExistingBucket, findFileInBucket
 app.delete('/:id/files/:idx_or_name', findExistingBucket, findFileInBucket, removeFileFromBucket, removeBucketZip, prepareBucketZip, returnBucketInfo);
 
 // patch metadata
-app.patch('/:id/metadata', findExistingBucket, jsonBodyParser, handleMetadataPatch, returnBucketInfo);
+app.post('/:id/metadata', findExistingBucket, jsonBodyParser, handleMetadataPost, returnBucketInfo);
 
 // handle all unexpected errors
 app.use(function(err, req, res, next) {
