@@ -1,6 +1,6 @@
 {
   "name": "filex",
-  "version": "1.0.14",
+  "version": "1.0.15",
   "description": "Filex - HTTP RESTful microservice for exchanging files between services and apps",
   "private": false,
   "scripts": {
